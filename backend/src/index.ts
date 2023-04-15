@@ -161,8 +161,7 @@ app.post('/callback/:id', async (req: Request, res: Response) => {
 	"
   >
 	<h1>
-	  Submitted claim successfully! You are eligible for Super Swags from
-	  Questbook
+	  Verified contribution to the repository for the lens handle
 	</h1>
   </div>`)
 })
