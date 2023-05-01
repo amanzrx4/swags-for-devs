@@ -17,7 +17,10 @@ const pool = new Pool({
 	connectionString: process.env.DATABASE_URL,
 })
 
-const reclaim = new Reclaim(callbackUrl)
+export const generateRandomNumber = () =>
+	Math.floor(Math.random() * 90000) + 10000
+
+const reclaim = new Reclaim()
 
 const isValidRepo = (repoStr: string) => {
 	return repoStr.indexOf('/') > -1 && repoStr.split('/').length === 2
@@ -39,14 +42,39 @@ app.get('/home/repo', async (req: Request, res: Response) => {
 
 	const callbackId = 'repo-' + generateUuid()
 	const template = (
-		await reclaim.connect('Github-contributor', [
-			{
-				provider: 'github-contributor',
-				params: {
-					repo: repoFullName,
+		await reclaim.connect(
+			'github-claim',
+			[
+				{
+					provider: 'github-claim',
+					parameters: {
+						queryString: '',
+						repository: repoFullName,
+						type: 'commits',
+					},
+					templateClaimId: generateUuid(),
 				},
-			},
-		])
+				{
+					provider: 'github-claim',
+					parameters: {
+						queryString: encodeURIComponent('is:pr'),
+						repository: repoFullName,
+						type: 'issues',
+					},
+					templateClaimId: generateUuid(),
+				},
+				{
+					provider: 'github-claim',
+					parameters: {
+						queryString: encodeURIComponent('is:issue'),
+						repository: repoFullName,
+						type: 'issues',
+					},
+					templateClaimId: generateUuid(),
+				},
+			],
+			callbackUrl
+		)
 	).generateTemplate(callbackId)
 	const url = template.url
 	const templateId = template.id
