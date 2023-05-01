@@ -51,24 +51,6 @@ app.get('/home/repo', async (req: Request, res: Response) => {
 					},
 					templateClaimId: generateUuid(),
 				},
-				{
-					provider: 'github-claim',
-					parameters: {
-						queryString: encodeURIComponent('is:pr'),
-						repository: repoFullName,
-						type: 'issues',
-					},
-					templateClaimId: generateUuid(),
-				},
-				{
-					provider: 'github-claim',
-					parameters: {
-						queryString: encodeURIComponent('is:issue'),
-						repository: repoFullName,
-						type: 'issues',
-					},
-					templateClaimId: generateUuid(),
-				},
 			],
 			callbackUrl
 		)
