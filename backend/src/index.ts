@@ -17,9 +17,6 @@ const pool = new Pool({
 	connectionString: process.env.DATABASE_URL,
 })
 
-export const generateRandomNumber = () =>
-	Math.floor(Math.random() * 90000) + 10000
-
 const reclaim = new Reclaim()
 
 const isValidRepo = (repoStr: string) => {
