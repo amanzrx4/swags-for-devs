@@ -69,7 +69,7 @@ app.get('/home/repo', async (req: Request, res: Response) => {
 
 	try {
 		await pool.query(
-			'INSERT INTO submitted_links (callback_id, status, repo, email, template_id, claimTypes) VALUES ($1, $2, $3, $4, $5)',
+			'INSERT INTO submitted_links (callback_id, status, repo, email, template_id, claimTypes) VALUES ($1, $2, $3, $4, $5, $6)',
 			[
 				callbackId,
 				'pending',
