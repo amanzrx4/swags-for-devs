@@ -24,6 +24,7 @@ export default function Main() {
 		const params = {
 			email: input.email,
 			repo: extractGitHubRepoPath(input.repoLink),
+			claimTypes: JSON.stringify(input.claimTypes),
 		}
 		return toast.promise(
 			axios.get(getCallbackUrl + '/repo', {

@@ -1,18 +1,24 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { extractGitHubRepoPath, handleError } from '../utils'
+import { startCase } from 'lodash'
 
 export type Inputs = {
 	email: string
 	repoLink: string
+	claimTypes: GithubClaimType[]
 }
 
 type FormProps = {
 	proveIt: (input: Inputs) => Promise<void>
 }
 
+const CLAIM_TYPE = ['issues', 'commits', 'pullRequests'] as const
+
+type GithubClaimType = (typeof CLAIM_TYPE)[number]
+
 const Form = ({ proveIt }: FormProps) => {
-	const [input, setInput] = useState<Inputs>({
+	const [input, setInput] = useState<Omit<Inputs, 'claimTypes'>>({
 		email: '',
 		repoLink: '',
 	})
@@ -24,11 +30,17 @@ const Form = ({ proveIt }: FormProps) => {
 		}))
 	}
 
+	const [selectedButton, setSelectedButton] = useState<GithubClaimType[]>([
+		'commits',
+	])
+
 	const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault()
 		const repoFullName = extractGitHubRepoPath(input.repoLink)
 		if (!repoFullName) return toast.error('Invalid repository link')
-		proveIt(input).catch((e) => console.log(handleError(e)))
+		proveIt({ ...input, claimTypes: selectedButton }).catch((e) =>
+			console.log(handleError(e))
+		)
 	}
 	return (
 		<form
@@ -52,6 +64,33 @@ const Form = ({ proveIt }: FormProps) => {
 				placeholder="GitHub repo link"
 				className="w-full px-5 py-5 lg:py-3 bg-white text-offBlack rounded-xl"
 			/>
+			<div className="w-full text-left mt-2">
+				<label className="text-white uppercase my-4 font-sans font-bold">
+					Claim type (Multiple)
+				</label>
+				<div className="items-center flex justify-between w-full mt-2">
+					{CLAIM_TYPE.map((claim) => {
+						const classes = selectedButton.includes(claim) ? `bg-yellow` : `bg-white`
+						return (
+							<button
+								key={claim}
+								type="button"
+								onClick={() => {
+									if (selectedButton.includes(claim)) {
+										return setSelectedButton((prev) =>
+											prev.filter((btn) => btn !== claim)
+										)
+									}
+									setSelectedButton((prev) => [...prev, claim])
+								}}
+								className={`py-3 lg:py-3 mt-2 px-4 rounded-md ease-in transition-colors ${classes}`}
+							>
+								{startCase(claim)}
+							</button>
+						)
+					})}
+				</div>
+			</div>
 
 			<button
 				type="submit"

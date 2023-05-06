@@ -1,6 +1,10 @@
 import express, { Express, Request, Response } from 'express'
 import dotenv from 'dotenv'
-import { Reclaim, generateUuid } from '@reclaimprotocol/reclaim-sdk'
+import {
+	GithubParams,
+	Reclaim,
+	generateUuid,
+} from '@reclaimprotocol/reclaim-sdk'
 import { Pool } from 'pg'
 import cors from 'cors'
 
@@ -24,9 +28,11 @@ const isValidRepo = (repoStr: string) => {
 }
 
 app.get('/home/repo', async (req: Request, res: Response) => {
-	const { repo, email } = req.query
-	if (!repo || !email) {
-		res.status(400).send(`400 - Bad Request: repo and email are required`)
+	let { repo, email, claimTypes } = req.query
+	if (!repo || !email || !claimTypes || !claimTypes.length) {
+		res
+			.status(400)
+			.send(`400 - Bad Request: repo, email and claimTypes are required`)
 		return
 	}
 	const repoFullName = repo as string
@@ -37,21 +43,24 @@ app.get('/home/repo', async (req: Request, res: Response) => {
 		return
 	}
 
+	claimTypes = JSON.parse(claimTypes as string) as Array<GithubParams['type']>
+
 	const callbackId = 'repo-' + generateUuid()
 	const template = (
 		await reclaim.connect(
 			'github-claim',
-			[
-				{
-					provider: 'github-claim',
-					parameters: {
-						queryString: '',
-						repository: repoFullName,
-						type: 'commits',
+			claimTypes.map((item) => ({
+				provider: 'github-claim',
+				payload: {
+					searchQuery: {
+						keywords: [],
+						qualifiers: {},
 					},
-					templateClaimId: generateUuid(),
+					repository: repoFullName,
+					type: item as GithubParams['type'],
 				},
-			],
+				templateClaimId: generateUuid(),
+			})),
 			callbackUrl
 		)
 	).generateTemplate(callbackId)
@@ -60,8 +69,15 @@ app.get('/home/repo', async (req: Request, res: Response) => {
 
 	try {
 		await pool.query(
-			'INSERT INTO submitted_links (callback_id, status, repo, email, template_id) VALUES ($1, $2, $3, $4, $5)',
-			[callbackId, 'pending', repoFullName, emailStr, templateId]
+			'INSERT INTO submitted_links (callback_id, status, repo, email, template_id, claimTypes) VALUES ($1, $2, $3, $4, $5)',
+			[
+				callbackId,
+				'pending',
+				repoFullName,
+				emailStr,
+				templateId,
+				JSON.stringify(claimTypes),
+			]
 		)
 	} catch (e) {
 		res.status(400).send(`500 - Internal Server Error - ${e}`)
